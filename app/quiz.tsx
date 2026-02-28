@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useQuizStore } from "../store/quizStore";
 
@@ -9,10 +9,19 @@ export default function Quiz() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string | string[] }>({});
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState<number | null>(timer > 0 ? timer : null);
-  const scoreRef = useRef(0); // ← track score in a ref so auto-submit gets the latest value
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const scoreRef = useRef(0);
 
-  const question = questions[currentIndex];
+  // ← Reset everything every time the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentIndex(0);
+      setSelectedAnswers({});
+      setScore(0);
+      scoreRef.current = 0;
+      setTimeLeft(timer > 0 ? timer : null);
+    }, [timer])
+  );
 
   useEffect(() => {
     if (timeLeft === null) return;
@@ -56,7 +65,7 @@ export default function Quiz() {
     const newScore = isCorrect ? score + 1 : score;
     if (isCorrect) {
       setScore(newScore);
-      scoreRef.current = newScore; // ← keep ref in sync
+      scoreRef.current = newScore;
     }
 
     if (currentIndex + 1 < questions.length) {
@@ -69,6 +78,8 @@ export default function Quiz() {
   const handlePrevious = () => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
+
+  const question = questions[currentIndex];
 
   return (
     <View style={styles.container}>
